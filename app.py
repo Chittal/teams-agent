@@ -1,7 +1,7 @@
 import asyncio
 import re
 
-from azure.identity import ManagedIdentityCredential
+from azure.identity import ManagedIdentityCredential, ClientSecretCredential
 from langchain_groq import ChatGroq
 from microsoft.teams.api import MessageActivity, TypingActivityInput
 from microsoft.teams.apps import ActivityContext, App
@@ -17,6 +17,7 @@ groq_llm = ChatGroq(
 )
 
 def create_token_factory():
+    """Token factory for Azure Managed Identity"""
     def get_token(scopes, tenant_id=None):
         credential = ManagedIdentityCredential(client_id=config.APP_ID)
         if isinstance(scopes, str):
@@ -27,9 +28,32 @@ def create_token_factory():
         return token.token
     return get_token
 
-app = App(
-    token=create_token_factory() if config.APP_TYPE == "UserAssignedMsi" else None
-)
+def create_client_secret_token_factory():
+    """Token factory for Client Secret authentication (for Render/AWS)"""
+    def get_token(scopes, tenant_id=None):
+        credential = ClientSecretCredential(
+            tenant_id=config.APP_TENANTID or "common",
+            client_id=config.APP_ID,
+            client_secret=config.APP_PASSWORD
+        )
+        if isinstance(scopes, str):
+            scopes_list = [scopes]
+        else:
+            scopes_list = scopes
+        token = credential.get_token(*scopes_list)
+        return token.token
+    return get_token
+
+# Initialize App with authentication
+# For Azure with Managed Identity
+if config.APP_TYPE == "UserAssignedMsi" and config.APP_ID:
+    app = App(token=create_token_factory())
+# For Render/AWS with Client Secret authentication
+elif config.APP_ID and config.APP_PASSWORD:
+    app = App(token=create_client_secret_token_factory())
+# Fallback - will cause 401 errors without credentials
+else:
+    app = App()
 
 @app.on_message_pattern(re.compile(r"hello|hi|greetings"))
 async def handle_greeting(ctx: ActivityContext[MessageActivity]) -> None:
