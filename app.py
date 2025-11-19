@@ -1,6 +1,8 @@
 import asyncio
 import re
 import uuid
+import logging
+import json
 
 from azure.identity import ManagedIdentityCredential, ClientSecretCredential
 from langchain_groq import ChatGroq
@@ -9,6 +11,8 @@ from microsoft.teams.apps import ActivityContext, App
 from config import Config
 
 config = Config()
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 # Initialize Groq LLM
 groq_llm = ChatGroq(
@@ -66,7 +70,8 @@ async def handle_greeting(ctx: ActivityContext[MessageActivity]) -> None:
 async def handle_message(ctx: ActivityContext[MessageActivity]):
     """Handle message activities using Groq LLM."""
     await ctx.reply(TypingActivityInput())
-    print("Full activity object:", ctx.activity)
+    logger.debug(f"Received message: {ctx.activity}")
+    logger.debug(f"Received message: {json.dumps(ctx.activity.__dict__, default=str, indent=2)}")
 
     user_message = ctx.activity.text
     
