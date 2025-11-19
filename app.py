@@ -8,6 +8,7 @@ from azure.identity import ManagedIdentityCredential, ClientSecretCredential
 from langchain_groq import ChatGroq
 from microsoft.teams.api import MessageActivity, TypingActivityInput
 from microsoft.teams.apps import ActivityContext, App
+from microsoft.teams.cards import AdaptiveCard
 from config import Config
 
 config = Config()
@@ -64,6 +65,73 @@ else:
 async def handle_greeting(ctx: ActivityContext[MessageActivity]) -> None:
     """Handle greeting messages."""
     await ctx.send("Hello! How can I assist you today?")
+
+def create_webpage_card(url: str, title: str = "Open Webpage", description: str = "Click the button below to open the webpage", image_url: str = None):
+    """Create an Adaptive Card with an OpenUrl action to render a webpage."""
+    body_elements = [
+        {
+            "type": "TextBlock",
+            "text": title,
+            "weight": "Bolder",
+            "size": "Medium"
+        }
+    ]
+    
+    # Add image if provided
+    if image_url:
+        body_elements.append({
+            "type": "Image",
+            "url": image_url,
+            "size": "Stretch",  # Stretch fills the full width of the card
+            "spacing": "Medium"
+        })
+    
+    body_elements.append({
+        "type": "TextBlock",
+        "text": description,
+        "wrap": True,
+        "spacing": "Small"
+    })
+    
+    adaptive_card = AdaptiveCard(
+        version="1.4",
+        body=body_elements,
+        actions=[
+            {
+                "type": "Action.OpenUrl",
+                "title": "Open Dashboard",
+                "url": url,
+                "style": "positive"
+            }
+        ]
+    )
+    return adaptive_card
+
+@app.on_message_pattern(re.compile(r"dashboard", re.IGNORECASE))
+async def handle_webpage_request(ctx: ActivityContext[MessageActivity]) -> None:
+    """Handle requests to render a webpage."""
+    # Default webpage URL - you can customize this or extract from message
+    webpage_url = "https://claude.ai/artifacts/1f4899b1-da1d-4712-aaaa-26514ec4635d"  # Replace with your desired URL
+    
+    # You can also extract URL from the message if provided
+    # For example, if user says "show webpage https://example.com"
+    # url_match = re.search(r'https?://[^\s]+', ctx.activity.text)
+    # if url_match:
+    #     webpage_url = url_match.group(0)
+    
+    # Ensure the URL is absolute and properly formatted
+    # if not webpage_url.startswith(('http://', 'https://')):
+    #     webpage_url = 'https://' + webpage_url
+    
+    adaptive_card = create_webpage_card(
+        url=webpage_url,
+        title="Dashboard",
+        description="Click the button below to open the dashboard in your browser.",
+        image_url="https://learn.microsoft.com/en-us/power-bi/create-reports/media/service-dashboards/power-bi-dashboard2.png"
+    )
+    
+    # Send AdaptiveCard directly - ctx.send() accepts AdaptiveCard and handles it automatically
+    await ctx.send(adaptive_card)
 
 
 @app.on_message
