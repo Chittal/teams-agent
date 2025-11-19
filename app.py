@@ -66,6 +66,16 @@ async def handle_greeting(ctx: ActivityContext[MessageActivity]) -> None:
     """Handle greeting messages."""
     await ctx.send("Hello! How can I assist you today?")
 
+@app.on_message_pattern(re.compile(r"ogp"))
+async def open_graph_metatags(ctx: ActivityContext[MessageActivity]) -> None:
+    """Handle open graph metatags."""
+    await ctx.send("Test open graph metatags: https://ogp.me/")
+
+@app.on_message_pattern(re.compile(r"just url"))
+async def open_graph_metatags_url(ctx: ActivityContext[MessageActivity]) -> None:
+    """Handle open graph metatags."""
+    await ctx.send("https://ogp.me/")
+
 def create_webpage_card(url: str, title: str = "Open Webpage", description: str = "Click the button below to open the webpage", image_url: str = None):
     """Create an Adaptive Card with an OpenUrl action to render a webpage."""
     body_elements = [
