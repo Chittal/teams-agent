@@ -1,4 +1,5 @@
 import asyncio
+import os
 import re
 import uuid
 import logging
@@ -6,8 +7,10 @@ import json
 from urllib.parse import urlparse
 
 import httpx
+# import uvicorn
 from bs4 import BeautifulSoup
 from azure.identity import ManagedIdentityCredential, ClientSecretCredential
+# from fastapi import FastAPI
 from langchain_groq import ChatGroq
 from microsoft.teams.api import MessageActivity, TypingActivityInput
 from microsoft.teams.apps import ActivityContext, App
@@ -17,6 +20,32 @@ from config import Config
 config = Config()
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
+
+# from microsoft.teams.apps.http_plugin import HttpPlugin
+
+# # Create your custom HttpPlugin
+# class NoServerHttpPlugin(HttpPlugin):
+#     async def on_start(self, event):
+#         """Override on_start to NOT start uvicorn server - we'll mount to main FastAPI app instead."""
+#         self._port = event.port
+#         self.logger.info(f"Teams app ready (port {event.port}), mounting to main FastAPI app")
+        
+#         # Call ready callback to signal initialization is complete
+#         if self._on_ready_callback:
+#             await self._on_ready_callback()
+        
+#         # IMPORTANT: Don't call await self._server.serve() - that's what prevents server startup
+#         # The parent class would normally start uvicorn here, but we skip it
+    
+#     async def on_stop(self):
+#         """Override on_stop since we're not managing our own server."""
+#         self.logger.info("Teams app stopped (no server to stop)")
+#         # Don't call self._server.should_exit = True since we don't have a server
+
+# # Initialize Teams app with custom plugin
+# app_id = config.APP_ID if hasattr(config, 'APP_ID') else None
+# custom_http_plugin = NoServerHttpPlugin(app_id=app_id, logger=logger)
+
 
 # Initialize Groq LLM
 groq_llm = ChatGroq(
@@ -56,13 +85,13 @@ def create_client_secret_token_factory():
 # Initialize App with authentication
 # For Azure with Managed Identity
 if config.APP_TYPE == "UserAssignedMsi" and config.APP_ID:
-    app = App(token=create_token_factory())
+    app = App(token=create_token_factory()) # , plugins=[custom_http_plugin]
 # For Render/AWS with Client Secret authentication
 elif config.APP_ID and config.APP_PASSWORD:
-    app = App(token=create_client_secret_token_factory())
+    app = App(token=create_client_secret_token_factory()) # , plugins=[custom_http_plugin]
 # Fallback - will cause 401 errors without credentials
 else:
-    app = App()
+    app = App() # plugins=[custom_http_plugin]
 
 @app.on_message_pattern(re.compile(r"hello|hi|greetings"))
 async def handle_greeting(ctx: ActivityContext[MessageActivity]) -> None:
@@ -445,5 +474,59 @@ async def handle_message(ctx: ActivityContext[MessageActivity]):
     #     await ctx.send(f"You said '{ctx.activity.text}'")
 
 
+# # Create main FastAPI app
+# main_app = FastAPI(
+#     title="ReKnew Teams Bot",
+#     description="Main FastAPI app with Teams bot integration"
+# )
+
+# # Add your own custom routes to main_app if needed
+# @main_app.get("/health")
+# async def health_check():
+#     """Health check endpoint."""
+#     return {
+#         "status": "healthy",
+#         "service": "ReKnew Teams Bot",
+#         "teams_mounted": True
+#     }
+
+# @main_app.get("/api/custom")
+# async def custom_endpoint():
+#     """Example custom endpoint."""
+#     return {"message": "This is a custom endpoint in your main FastAPI app"}
+
+
+# async def initialize_teams_app():
+#     """Initialize Teams app without starting its own server."""
+#     port = int(os.getenv("PORT", "3978"))
+    
+#     # Set ready callback
+#     async def on_http_ready() -> None:
+#         app.log.info("Teams app initialized successfully - ready to mount to main FastAPI app")
+    
+#     app.http.on_ready_callback = on_http_ready
+    
+#     # Start the app - this will initialize plugins and call on_start()
+#     # NoServerHttpPlugin.on_start() returns immediately (doesn't start server),
+#     # so app.start() will complete quickly without blocking
+#     await app.start(port=port)
+    
+#     # Mount Teams FastAPI app to main app after initialization
+#     # Teams routes will be available at /api/messages, /, etc.
+#     main_app.mount("/", app.http.app)
+#     logger.info("Teams FastAPI app mounted to main FastAPI app")
+
+
 if __name__ == "__main__":
+    # Initialize Teams app first
+    # asyncio.run(initialize_teams_app())
     asyncio.run(app.start())
+    
+    # # Start main FastAPI app with uvicorn
+    # port = int(os.getenv("PORT", "3978"))
+    # uvicorn.run(
+    #     main_app,
+    #     host="0.0.0.0",
+    #     port=port,
+    #     log_level="info"
+    # )
