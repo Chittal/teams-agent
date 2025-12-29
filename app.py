@@ -271,7 +271,8 @@ def create_webpage_card(url: str, title: str = "Open Webpage", description: str 
 async def handle_webpage_request(ctx: ActivityContext[MessageActivity]) -> None:
     """Handle requests to render a webpage."""
     # Default webpage URL - you can customize this or extract from message
-    webpage_url = "https://teams.microsoft.com/l/entity/2ff197b8-75af-465a-8067-ab50b05c9648/dashboardTab?dashboardId=42"  # Replace with your desired URL
+    dashboardId = "42"
+    webpage_url = f"https://teams.microsoft.com/l/entity/2ff197b8-75af-465a-8067-ab50b05c9648/dashboardTab?context=%7B%22subEntityId%22%3A{dashboardId}%7D"  # Replace with your desired URL
     
     # You can also extract URL from the message if provided
     # For example, if user says "show webpage https://example.com"
