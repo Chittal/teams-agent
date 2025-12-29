@@ -287,7 +287,7 @@ async def handle_webpage_request(ctx: ActivityContext[MessageActivity]) -> None:
         url=webpage_url,
         title="Dashboard",
         description="Click the button below to open the dashboard in your browser.",
-        image_url="https://learn.microsoft.com/en-us/power-bi/create-reports/media/service-dashboards/power-bi-dashboard2.png"
+        image_url="https://teams.microsoft.com/l/entity/2ff197b8-75af-465a-8067-ab50b05c9648/dashboardTab?dashboardId=42"
     )
     
     # Send AdaptiveCard directly - ctx.send() accepts AdaptiveCard and handles it automatically
