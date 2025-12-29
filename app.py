@@ -271,7 +271,7 @@ def create_webpage_card(url: str, title: str = "Open Webpage", description: str 
 async def handle_webpage_request(ctx: ActivityContext[MessageActivity]) -> None:
     """Handle requests to render a webpage."""
     # Default webpage URL - you can customize this or extract from message
-    webpage_url = "https://claude.ai/artifacts/1f4899b1-da1d-4712-aaaa-26514ec4635d"  # Replace with your desired URL
+    webpage_url = "https://teams.microsoft.com/l/entity/2ff197b8-75af-465a-8067-ab50b05c9648/dashboardTab?dashboardId=42"  # Replace with your desired URL
     
     # You can also extract URL from the message if provided
     # For example, if user says "show webpage https://example.com"
@@ -287,7 +287,7 @@ async def handle_webpage_request(ctx: ActivityContext[MessageActivity]) -> None:
         url=webpage_url,
         title="Dashboard",
         description="Click the button below to open the dashboard in your browser.",
-        image_url="https://teams.microsoft.com/l/entity/2ff197b8-75af-465a-8067-ab50b05c9648/dashboardTab?dashboardId=42"
+        image_url="https://learn.microsoft.com/en-us/power-bi/create-reports/media/service-dashboards/power-bi-dashboard2.png"
     )
     
     # Send AdaptiveCard directly - ctx.send() accepts AdaptiveCard and handles it automatically
